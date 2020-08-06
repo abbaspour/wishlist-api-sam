@@ -1,0 +1,5 @@
+## Copy me to .env and adjust to your deployment
+
+stage='Prod'
+apiId='02azzjf3b5'
+region='ap-southeast-2'

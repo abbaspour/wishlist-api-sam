@@ -1,0 +1,151 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: wishlist-api-sam
+
+Transform:
+- AWS::Serverless-2016-10-31
+
+Parameters:
+  StageName:
+    Type: String
+    Default: Prod
+  Auth0Domain:
+    Type: String
+    Default: samdemo.auth0.com
+
+Resources:
+  #AccessLogs:
+  #  Type: AWS::Logs::LogGroup
+  #  Properties:
+  #    LogGroupName: WishlistLogs
+  #    RetentionInDays: 3
+
+  WishlistTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: "user_id"
+          KeyType: "HASH"
+        - AttributeName: "id"
+          KeyType: "RANGE"
+      AttributeDefinitions:
+        - AttributeName: "user_id"
+          AttributeType: "S"
+        - AttributeName: "id"
+          AttributeType: "S"
+      ProvisionedThroughput:
+        ReadCapacityUnits: 2
+        WriteCapacityUnits: 2
+
+  getItemsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get-items.getItemsHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP get method to get all my items from Wish List DynamoDB table.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WishlistTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WishlistTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /wishlist
+            Method: GET
+            ApiId: !Ref WishlistAPI
+            Auth:
+              Authorizer: OpenIdAuthorizer
+
+  postItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/post-item.postItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP POST method to create a new item in Wish List DynamoDB table.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WishlistTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WishlistTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /wishlist
+            Method: POST
+            ApiId: !Ref WishlistAPI
+            Auth:
+              Authorizer: OpenIdAuthorizer
+
+  deleteItemFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/delete-item.deleteItemHandler
+      Runtime: nodejs12.x
+      MemorySize: 128
+      Timeout: 100
+      Description: A simple example includes a HTTP DELETE method to delete an item from Wish List DynamoDB table.
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref WishlistTable
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref WishlistTable
+      Events:
+        Api:
+          Type: HttpApi
+          Properties:
+            Path: /wishlist/{id}
+            Method: DELETE
+            ApiId: !Ref WishlistAPI
+            Auth:
+              Authorizer: OpenIdAuthorizer
+
+  WishlistAPI:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: !Ref StageName
+      FailOnWarnings: True
+      #AccessLogSettings:
+      #  DestinationArn: !GetAtt AccessLogs.Arn
+      Auth:
+        Authorizers:
+          OpenIdAuthorizer:
+            AuthorizationScopes:
+              - read:items
+              - create:item
+              - delete:item
+            JwtConfiguration:
+              issuer: !Sub "https://${Auth0Domain}/"
+              audience:
+                - https://wishlist.api
+            IdentitySource: $request.header.Authorization
+        DefaultAuthorizer: OpenIdAuthorizer
+
+Outputs:
+  Shutdown:
+    Description: CloudFormation Delete Command
+    Value: !Sub "aws cloudformation delete-stack --stack-name ${AWS::StackName}"
+
+  GetItemsLambdaFunction:
+    Description: GET Items Lambda Function Logs
+    Value: !Sub "sam logs -n ${getItemsFunction} --tail"
+
+  PostItemLambdaFunction:
+    Description: POST Item Lambda Function Logs
+    Value: !Sub "sam logs -n ${postItemFunction} --tail"
+
+  DelleteItemLambdaFunction:
+    Description: DELETE Item Lambda Function Logs
+    Value: !Sub "sam logs -n ${deleteItemFunction} --tail"
+
+  WebEndpoint:
+    Description: "API Gateway endpoint URL"
+    Value: !Sub 'https://${WishlistAPI}.execute-api.${AWS::Region}.${AWS::URLSuffix}/${StageName}/wishlist'
