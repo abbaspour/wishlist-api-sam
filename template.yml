@@ -10,7 +10,6 @@ Parameters:
     Default: Prod
   Auth0Domain:
     Type: String
-    Default: samdemo.auth0.com
 
 Resources:
   #AccessLogs:
@@ -59,6 +58,8 @@ Resources:
             ApiId: !Ref WishlistAPI
             Auth:
               Authorizer: OpenIdAuthorizer
+              AuthorizationScopes:
+                - read:items
 
   postItemFunction:
     Type: AWS::Serverless::Function
@@ -83,6 +84,8 @@ Resources:
             ApiId: !Ref WishlistAPI
             Auth:
               Authorizer: OpenIdAuthorizer
+              AuthorizationScopes:
+                - create:item
 
   deleteItemFunction:
     Type: AWS::Serverless::Function
@@ -107,6 +110,8 @@ Resources:
             ApiId: !Ref WishlistAPI
             Auth:
               Authorizer: OpenIdAuthorizer
+              AuthorizationScopes:
+                - delete:item
 
   WishlistAPI:
     Type: AWS::Serverless::HttpApi
@@ -118,10 +123,6 @@ Resources:
       Auth:
         Authorizers:
           OpenIdAuthorizer:
-            AuthorizationScopes:
-              - read:items
-              - create:item
-              - delete:item
             JwtConfiguration:
               issuer: !Sub "https://${Auth0Domain}/"
               audience:
