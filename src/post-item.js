@@ -1,7 +1,8 @@
 const tableName = process.env.TABLE_NAME;
 
 const dynamodb = require('aws-sdk/clients/dynamodb');
-const jwtDecode = require('jwt-decode');
+const userId = require('./user-id.js');
+
 const docClient = new dynamodb.DocumentClient();
 
 exports.postItemHandler = async (event, context) => {
@@ -10,16 +11,7 @@ exports.postItemHandler = async (event, context) => {
     throw new Error(`postItemHandler only accept GET method. event: ${JSON.toSource(event)}`);
   }
 
-  const authorizationHeader = event.headers.authorization || '';
-  const TokenArray = authorizationHeader.split(' ');
-  if(TokenArray.length !== 2) {
-    throw new Error(`header is invalid: ${authorizationHeader}`);
-  }
-
-  const decodedHeader = jwtDecode(TokenArray[1]);
-  console.info('received decodedHeader:', decodedHeader);
-
-  const user_id = decodedHeader.sub;
+  const user_id = userId.getUserId(event);
   const id = context.awsRequestId;
 
   const {name, url, description} = JSON.parse(event.body);
@@ -45,6 +37,6 @@ exports.postItemHandler = async (event, context) => {
     }
   }
 
-  console.info(`response from: ${event.rawPath} statusCode: ${response.statusCode} body: ${response.body}`);
+  console.info(`response from: POST ${event.rawPath}, user_id: ${user_id}, name: ${name}, statusCode: ${response.statusCode} body: ${response.body}`);
   return response;
 }

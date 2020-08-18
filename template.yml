@@ -38,13 +38,13 @@ Resources:
   getItemsFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/get-items.getItemsHandler
+      Handler: src/get-items.getItemsHandler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 100
-      Description: A simple example includes a HTTP get method to get all my items from Wish List DynamoDB table.
+      Description: an HTTP get method to get all my items from WishList DynamoDB table.
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBReadPolicy:
             TableName: !Ref WishlistTable
       Environment:
         Variables:
@@ -57,20 +57,20 @@ Resources:
             Method: GET
             ApiId: !Ref WishlistAPI
             Auth:
-              Authorizer: OpenIdAuthorizer
+              Authorizer: Auth0Authorizer
               AuthorizationScopes:
                 - read:items
 
   postItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/post-item.postItemHandler
+      Handler: src/post-item.postItemHandler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 100
-      Description: A simple example includes a HTTP POST method to create a new item in Wish List DynamoDB table.
+      Description: an HTTP POST method to create a new item in WishList DynamoDB table.
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBWritePolicy:
             TableName: !Ref WishlistTable
       Environment:
         Variables:
@@ -83,20 +83,20 @@ Resources:
             Method: POST
             ApiId: !Ref WishlistAPI
             Auth:
-              Authorizer: OpenIdAuthorizer
+              Authorizer: Auth0Authorizer
               AuthorizationScopes:
                 - create:item
 
   deleteItemFunction:
     Type: AWS::Serverless::Function
     Properties:
-      Handler: src/handlers/delete-item.deleteItemHandler
+      Handler: src/delete-item.deleteItemHandler
       Runtime: nodejs12.x
       MemorySize: 128
       Timeout: 100
-      Description: A simple example includes a HTTP DELETE method to delete an item from Wish List DynamoDB table.
+      Description: an HTTP DELETE method to delete an item from WishList DynamoDB table.
       Policies:
-        - DynamoDBCrudPolicy:
+        - DynamoDBWritePolicy:
             TableName: !Ref WishlistTable
       Environment:
         Variables:
@@ -109,7 +109,7 @@ Resources:
             Method: DELETE
             ApiId: !Ref WishlistAPI
             Auth:
-              Authorizer: OpenIdAuthorizer
+              Authorizer: Auth0Authorizer
               AuthorizationScopes:
                 - delete:item
 
@@ -122,13 +122,13 @@ Resources:
       #  DestinationArn: !GetAtt AccessLogs.Arn
       Auth:
         Authorizers:
-          OpenIdAuthorizer:
+          Auth0Authorizer:
             JwtConfiguration:
               issuer: !Sub "https://${Auth0Domain}/"
               audience:
                 - https://wishlist.api
             IdentitySource: $request.header.Authorization
-        DefaultAuthorizer: OpenIdAuthorizer
+        DefaultAuthorizer: Auth0Authorizer
 
 Outputs:
   Shutdown:

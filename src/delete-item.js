@@ -1,24 +1,17 @@
 const tableName = process.env.TABLE_NAME;
 
 const dynamodb = require('aws-sdk/clients/dynamodb');
-const jwtDecode = require('jwt-decode');
+const userId = require('./user-id.js');
+
 const docClient = new dynamodb.DocumentClient();
 
-exports.deleteItemHandler = async (event, context) => {
+exports.deleteItemHandler = async (event) => {
 
   if (event.requestContext.http.method !== 'DELETE') {
     throw new Error(`deleteItemHandler only accept DELETE method. event: ${JSON.toSource(event)}`);
   }
 
-  const authorizationHeader = event.headers.authorization || '';
-  const TokenArray = authorizationHeader.split(' ');
-  if(TokenArray.length !== 2) {
-    throw new Error(`header is invalid: ${authorizationHeader}`);
-  }
-
-  const decodedHeader = jwtDecode(TokenArray[1]);
-
-  const user_id = decodedHeader.sub;
+  const user_id = userId.getUserId(event);
   const id = event.pathParameters.id;
 
   let params = {
@@ -39,6 +32,6 @@ exports.deleteItemHandler = async (event, context) => {
     },
   };
 
-  console.info(`response from: ${event.rawPath} statusCode: ${response.statusCode} `);
+  console.info(`response from: DELETE ${event.rawPath}, user_id: ${user_id}, id: ${id}, statusCode: ${response.statusCode}`);
   return response;
 }
