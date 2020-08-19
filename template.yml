@@ -12,12 +12,6 @@ Parameters:
     Type: String
 
 Resources:
-  #AccessLogs:
-  #  Type: AWS::Logs::LogGroup
-  #  Properties:
-  #    LogGroupName: WishlistLogs
-  #    RetentionInDays: 3
-
   WishlistTable:
     Type: AWS::DynamoDB::Table
     Properties:
@@ -96,7 +90,7 @@ Resources:
       Timeout: 100
       Description: an HTTP DELETE method to delete an item from WishList DynamoDB table.
       Policies:
-        - DynamoDBWritePolicy:
+        - DynamoDBCrudPolicy:
             TableName: !Ref WishlistTable
       Environment:
         Variables:
@@ -118,8 +112,6 @@ Resources:
     Properties:
       StageName: !Ref StageName
       FailOnWarnings: True
-      #AccessLogSettings:
-      #  DestinationArn: !GetAtt AccessLogs.Arn
       Auth:
         Authorizers:
           Auth0Authorizer:
@@ -134,18 +126,6 @@ Outputs:
   Shutdown:
     Description: CloudFormation Delete Command
     Value: !Sub "aws cloudformation delete-stack --stack-name ${AWS::StackName}"
-
-  GetItemsLambdaFunction:
-    Description: GET Items Lambda Function Logs
-    Value: !Sub "sam logs -n ${getItemsFunction} --tail"
-
-  PostItemLambdaFunction:
-    Description: POST Item Lambda Function Logs
-    Value: !Sub "sam logs -n ${postItemFunction} --tail"
-
-  DelleteItemLambdaFunction:
-    Description: DELETE Item Lambda Function Logs
-    Value: !Sub "sam logs -n ${deleteItemFunction} --tail"
 
   WebEndpoint:
     Description: "API Gateway endpoint URL"
